@@ -1,0 +1,16 @@
+{
+    "name": "mojtaba/wc-export-products",
+    "autoload": {
+        "psr-4": {
+            "Mojtaba\\WcExportProducts\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mojtaba"
+        }
+    ],
+    "require": {
+        "phpoffice/phpspreadsheet": "^1.28"
+    }
+}
