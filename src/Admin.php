@@ -25,7 +25,7 @@ class Admin {
 					}
 
 					if ( ! wp_verify_nonce( $_POST['field_nonce_export_product'], 'wc-export-product' )
-					     || !check_admin_referer( 'wc-export-product', 'field_nonce_export_product' ) ) {
+					     || ! check_admin_referer( 'wc-export-product', 'field_nonce_export_product' ) ) {
 						wp_die( 'Error Nonce' );
 					}
 
@@ -35,8 +35,27 @@ class Admin {
 
 					$args = array(
 						'post_type'      => 'product',
-						'posts_per_page' => - 1
+						'posts_per_page' => - 1,
 					);
+
+					switch ( $_POST['stock'] ) {
+						case 'in_stock':
+							$args['meta_query'] = array(
+								array(
+									'key'   => '_stock_status',
+									'value' => 'instock'
+								)
+							);
+							break;
+						case 'out_stock':
+							$args['meta_query'] = array(
+								array(
+									'key'   => '_stock_status',
+									'value' => 'outofstock'
+								)
+							);
+							break;
+					}
 
 					$loop = new WP_Query( $args );
 
@@ -53,28 +72,31 @@ class Admin {
 
 						global $product;
 
-						$title     = $product->get_title();
+						$title = $product->get_title();
 
 						$stock_qty = $product->get_stock_quantity();
 
-						$sku       = $product->get_sku();
+						$sku = $product->get_sku();
 
 						$thumbnail = $product->get_image_id();
 
-						$excerpt   = get_the_excerpt( $product->get_id() );
-						if ($excerpt) $excerpt = true; else $excerpt =false;
+						$excerpt = has_excerpt( $product->get_id() );
 
-						$content   = get_the_content( $product->get_id() );
-					if ($content) $content = true; else $content =false;
+						$content = get_the_content( $product->get_id() );
+						if ( $content ) {
+							$content = true;
+						} else {
+							$content = false;
+						}
 
 						$sheet->setCellValue( 'A' . $c, $title );
 						$sheet->setCellValue( 'B' . $c, $sku );
 						$sheet->setCellValue( 'C' . $c, $stock_qty );
 						$sheet->setCellValue( 'D' . $c, (bool) $thumbnail );
-						$sheet->setCellValue( 'E' . $c,  $excerpt );
-						$sheet->setCellValue( 'F' . $c,  $content );
+						$sheet->setCellValue( 'E' . $c, $excerpt );
+						$sheet->setCellValue( 'F' . $c, $content );
 
-                        $c++;
+						$c ++;
 
 					endwhile;
 
@@ -83,22 +105,33 @@ class Admin {
 					$writer = new Xlsx( $spreadsheet );
 
 					$writer->save( PATH_PLUGIN . 'export/' . $filename . '.xlsx' );
+                    echo 'فایل با موفقیت ایجاد شد';
 				}
 
 				?>
-                <form action="" method="post">
-					<?php echo wp_nonce_field( 'wc-export-product', 'field_nonce_export_product' ) ?>
-                    <label for="stock">محصولات موجود</label>
-                    <input type="radio" id="stock" name="stock" checked
-                           value="in_stock">
-                    <label for="stock">محصولات ناموجود</label>
-                    <input type="radio" id="stock" name="stock"
-                           value="out_stock">
-                    <label for="stock">همه</label>
-                    <input type="radio" id="stock" name="stock" value="all">
+                <div class="container">
+                    <h5>خروجی محصولات</h5>
+                    <hr>
+                    <form action="" method="post">
+						<?php echo wp_nonce_field( 'wc-export-product', 'field_nonce_export_product' ) ?>
+                        <label for="in_stock">محصولات موجود</label>
+                        <input type="radio" id="in_stock" name="stock" checked
+                               value="in_stock">
 
-                    <input type="submit" class="button button-primary" name="btn_export" value="تایید">
-                </form>
+                        <label for="out_stock">محصولات ناموجود</label>
+                        <input type="radio" id="out_stock" name="stock"
+                               value="out_stock">
+
+                        <label for="all">همه</label>
+                        <input type="radio" id="all" name="stock" value="all">
+
+                        <br>
+
+
+                        <input type="submit" class="button button-primary" name="btn_export" value="تایید">
+                    </form>
+                </div>
+
 				<?php
 			}
 		);
